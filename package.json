@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "directory-tree": "^3.0.1",
+    "extract-zip": "^2.0.1",
+    "jszip": "^3.7.1",
+    "osu-json": "^0.9.1"
+  }
+}

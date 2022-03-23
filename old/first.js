@@ -2,44 +2,64 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 const extract = require('extract-zip')
-const dirTree = require('./node_modules/directory-tree');
+const dirTree = require('directory-tree');
 
-http.createServer(async function (req, res) {
+http.createServer(async function(req, res) {
 
     let query = url.parse(req.url, true).path.substring(1);
     if (query !== 'favicon.ico') {
 
-        const start = dirTree("E:/TelegramChannelProject").children;
+        const start = dirTree("F:/TelegramChannelProject").children;
 
-        asyncSendFinalResponse(
-            asyncFilterSongInfo(
-                asyncSelectSongInfo(
-                    asyncSelectOsu(
-                        asyncSelectFolder(
-                            asyncUnzipZips(
-                                asyncSelectZip(
-                                    asyncGenerateZip(
-                                        asyncSelectOsz(
+        // # rodar 3 vezes primeiro
+        try {
+
+            asyncSendFinalResponse(
+                asyncFilterSongInfo(
+                    asyncSelectSongInfo(
+                        asyncSelectOsu(
+                            asyncSelectFolder(
+                                asyncUnzipZips(
+                                    asyncSelectZip(
+                                        asyncGenerateZip(
+                                            asyncSelectOsz(
+                                                asyncSelectDir(
+                                                    start, query
+                                                )
+                                            ),
                                             asyncSelectDir(
                                                 start, query
                                             )
-                                        ),
-                                        asyncSelectDir(
-                                            start, query
                                         )
+                                    ),
+                                    asyncSelectDir(
+                                        start, query
                                     )
-                                ),
-                                asyncSelectDir(
-                                    start, query
                                 )
                             )
                         )
                     )
-                )
-            ), res, asyncSelectDir(start, query)
-        )
+                ), res, asyncSelectDir(start, query)
+            );
 
-        /// OLNY ASYNC
+        } catch (err) {
+            console.log(err)
+        }
+        // # rodar 1 vez depos
+
+        // asyncSendFinalResponse(
+        //     asyncFilterSongInfo(
+        //         asyncSelectSongInfo(
+        //             asyncSelectOsu(
+        //                 asyncSelectFolder(
+        //                     asyncSelectDir(
+        //                         start, query
+        //                     )
+        //                 )
+        //             )
+        //         )
+        //     ), res, asyncSelectDir(start, query)
+        // );
 
     }
 }).listen(9999);
@@ -47,14 +67,14 @@ http.createServer(async function (req, res) {
 async function extractFrom(originalPath) {
     try {
         await extract(originalPath + '.zip', { dir: originalPath })
-        // console.log('Extraction complete')
+            // console.log('Extraction complete')
     } catch (err) {
         console.log('Failed to extract')
         console.log(err)
     }
 }
 
-const asyncSelectDir = async (list, query) => {
+const asyncSelectDir = async(list, query) => {
     var pack;
 
     // for (let child in list) {
@@ -70,7 +90,7 @@ const asyncSelectDir = async (list, query) => {
     return pack
 }
 
-const asyncSelectOsz = async (list) => {
+const asyncSelectOsz = async(list) => {
     await list.then(x => {
         list = x.children;
     });
@@ -89,7 +109,7 @@ const asyncSelectOsz = async (list) => {
     return oszFiles
 }
 
-const asyncGenerateZip = async (list, source) => {
+const asyncGenerateZip = async(list, source) => {
     await list.then(x => {
         list = x;
     });
@@ -110,7 +130,7 @@ const asyncGenerateZip = async (list, source) => {
     return source
 }
 
-const asyncSelectZip = async (list) => {
+const asyncSelectZip = async(list) => {
     await list.then(x => {
         list = x.children;
     });
@@ -128,7 +148,7 @@ const asyncSelectZip = async (list) => {
     return zipFiles
 }
 
-const asyncDeleteZip = async (list) => {
+const asyncDeleteZip = async(list) => {
 
     // for (const file in list) {
     for (let i = 0; i < list.length; i++) {
@@ -150,7 +170,7 @@ const asyncDeleteZip = async (list) => {
 
 
 
-const asyncUnzipZips = async (list, source) => {
+const asyncUnzipZips = async(list, source) => {
     await list.then(x => {
         list = x;
     });
@@ -164,7 +184,7 @@ const asyncUnzipZips = async (list, source) => {
     return source
 }
 
-const asyncSelectFolder = async (list) => {
+const asyncSelectFolder = async(list) => {
     await list.then(x => {
         list = x.children;
     });
@@ -183,7 +203,7 @@ const asyncSelectFolder = async (list) => {
     return folders
 }
 
-const asyncSelectOsu = async (list) => {
+const asyncSelectOsu = async(list) => {
     await list.then(x => {
         list = x;
     });
@@ -207,7 +227,7 @@ const asyncSelectOsu = async (list) => {
     return osuFiles
 }
 
-const asyncSelectSongInfo = async (list) => {
+const asyncSelectSongInfo = async(list) => {
     await list.then(x => {
         list = x;
     });
@@ -224,7 +244,7 @@ const asyncSelectSongInfo = async (list) => {
     return txtFiles;
 }
 
-const asyncFilterSongInfo = async (list) => {
+const asyncFilterSongInfo = async(list) => {
     await list.then(x => {
         list = x;
     });
@@ -247,11 +267,12 @@ const asyncFilterSongInfo = async (list) => {
     return infoFromFiles
 }
 
-const asyncSongInfoSearcher = async (fileContent, number) => {
+const asyncSongInfoSearcher = async(fileContent, number) => {
     const metadataArray = fileContent.substring(
         fileContent.lastIndexOf("[Metadata]") + 12,
         fileContent.lastIndexOf("[Difficulty]") - 3
     ).split('\n');
+    console.log(metadataArray)
 
     let songInfo = {};
 
@@ -262,23 +283,24 @@ const asyncSongInfoSearcher = async (fileContent, number) => {
         metadataArray[0].length - 1
     )
 
-    songInfo.artist = metadataArray[2].substring(
-        metadataArray[2].indexOf("Artist:") + 7,
-        metadataArray[2].length - 1
+    songInfo.artist = metadataArray[metadataArray.length > 6 ? 2 : 1].substring(
+        metadataArray[metadataArray.length > 6 ? 2 : 1].indexOf("Artist:") + 7,
+        metadataArray[metadataArray.length > 6 ? 2 : 1].length - 1
     )
 
     songInfo.fullTitle = songInfo.artist + ' - ' + songInfo.title;
 
-    songInfo.mapper = metadataArray[4].substring(
-        metadataArray[4].indexOf("Creator:") + 8,
-        metadataArray[4].length - 1
+    songInfo.mapper = metadataArray[metadataArray.length > 6 ? 4 : 2].substring(
+        metadataArray[metadataArray.length > 6 ? 4 : 2].indexOf("Creator:") + 8,
+        metadataArray[metadataArray.length > 6 ? 4 : 2].length - 1
     )
 
-    songInfo.id = metadataArray[9].substring(
+    songInfo.id = metadataArray.length > 6 ? metadataArray[9].substring(
         metadataArray[9].indexOf("BeatmapSetID:") + 13,
         metadataArray[9].length - 1
-    )
+    ) : 0
 
+    console.log(songInfo)
     songInfo.link = 'https://osu.ppy.sh/beatmapsets/' + songInfo.id;
     return songInfo;
 }
@@ -287,7 +309,7 @@ const listItemBuilder = (songInfo) => {
     return songInfo.number + '. [' + songInfo.fullTitle + '](' + songInfo.link + ') by ' + songInfo.mapper;
 }
 
-const asyncSendFinalResponse = async (infos, res, source) => {
+const asyncSendFinalResponse = async(infos, res, source) => {
     await infos.then(x => {
         infos = x;
     });
@@ -295,7 +317,7 @@ const asyncSendFinalResponse = async (infos, res, source) => {
         source = x;
     });
 
-    let completeList = 'Fancy Header Here #' + source.name + 'by Jacques VST\n\n'
+    let completeList = 'Fancy Header Here #' + source.name + ' by Jacques VST\n\n'
     infos.forEach(info => {
         completeList += listItemBuilder(info) + '\n'
     });
